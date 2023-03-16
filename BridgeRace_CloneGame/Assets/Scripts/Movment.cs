@@ -12,7 +12,6 @@ public class Movment : MonoBehaviour
     private void FixedUpdate()
     {
         MovmentFonc();
-        BorderFonc();
     }
 
     private void MovmentFonc()
@@ -23,15 +22,4 @@ public class Movment : MonoBehaviour
         transform.Translate(new Vector3(AxisX, 0, AxisZ).normalized * speed);
     }
 
-    private void BorderFonc()
-    {
-        if (transform.position.x >= borderX)
-            transform.position = new Vector3(borderX - 0.2f, transform.position.y, transform.position.z);
-        else if (transform.position.x <= -borderX)
-            transform.position = new Vector3(-borderX + 0.2f, transform.position.y, transform.position.z);
-        else if (transform.position.z >= borderZ)
-            transform.position = new Vector3(transform.position.x, transform.position.y, borderZ - 0.2f);
-        else if (transform.position.z <= -borderZ)
-            transform.position = new Vector3(transform.position.x, transform.position.y, -borderZ + 0.2f);
-    }
 }

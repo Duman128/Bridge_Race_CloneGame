@@ -5,19 +5,27 @@ using UnityEngine;
 public class BrickManager : MonoBehaviour
 {
     private Transform PlayerTransform;
+    private Material brickColorMaterial;
+   
+    public Stairs _Stairs;
+
     private DetectBrickAndPick Player_DetectBrickAndPick;
     [SerializeField] private LayerMask playerLayer;
+    [SerializeField] private LayerMask stairsLayer;
     [SerializeField] private float RayRadius;
+    [SerializeField] private Vector3 detectBoxSize;
 
     public bool putFirstStair;
-
-    private void OnDrawGizmos()
-    {
-        Gizmos.DrawLine(transform.position, new Vector3(transform.position.x, transform.position.y, transform.position.z - .6f));
-    }
-
+    
     private void Start()
     {
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            transform.GetChild(i).gameObject.SetActive(false);
+        }
+
+        brickColorMaterial = GetComponent<MeshRenderer>().material;
+
         putFirstStair = false;
         PlayerTransform = GameObject.FindGameObjectWithTag("Player").transform;
         Player_DetectBrickAndPick = PlayerTransform.GetComponent<DetectBrickAndPick>();
@@ -25,30 +33,61 @@ public class BrickManager : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if(!putFirstStair)
+
+        if (!putFirstStair)
             DetectPlayer();
         else
-            updatePlayerAxisY();
+            WallAndUpdateYAxisFonc();
+            
     }
 
-    void DetectPlayer()
+    private void WallAndUpdateYAxisFonc()
+    {
+        _Stairs = transform.parent.parent.GetComponent<Stairs>();
+
+        updatePlayerAxisY();
+
+        if (_Stairs.StairsParentObject.childCount == _Stairs.stairCount)
+            transform.GetChild(0).gameObject.SetActive(false);
+
+        else if (transform == _Stairs.StairsParentObject.GetChild(_Stairs.StairsParentObject.childCount - 1))
+        {
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                transform.GetChild(i).gameObject.SetActive(true);
+            }
+        }
+
+        else
+            transform.GetChild(0).gameObject.SetActive(false);
+    }
+
+    private void DetectPlayer()
     {
         if (Physics.CheckSphere(transform.position, RayRadius, playerLayer))
-            Player_DetectBrickAndPick.PickBricks(transform);
+            Player_DetectBrickAndPick.PickBricks(transform, brickColorMaterial);
     }
 
     private void updatePlayerAxisY()
     {
         RaycastHit hitInfo;
-        if (Physics.Raycast(transform.position, Vector3.back, out hitInfo, .6f))
-            PlayerTransform.position = new Vector3(PlayerTransform.position.x, PlayerTransform.position.y + .25f, PlayerTransform.position.z + .05f);
+        if (Physics.BoxCast(transform.position, transform.lossyScale / 2, Vector3.back, out hitInfo, transform.localRotation, .2f))
+            hitInfo.transform.position = new Vector3(hitInfo.transform.position.x, hitInfo.transform.position.y + .25f, hitInfo.transform.position.z + .05f);
     }
 
-    public void PutBricksOnStairs(Transform StairsParentObject)
+    public void PutNextBrick(Transform hitObject)
+    {
+        DetectBrickAndPick detectBrickAndPick_Player = hitObject.transform.GetComponent<DetectBrickAndPick>();
+        Transform bricksOldParent = detectBrickAndPick_Player.PickBrickPoint;
+
+        _Stairs.PutStairsOnPlace(hitObject, detectBrickAndPick_Player, bricksOldParent);
+    }
+
+    public void PutBricksOnStairs(Transform StairsParentObject, Material StairLastObject, Material PlayerLastObject)
     {
         putFirstStair = true;
 
-        if (StairsParentObject.childCount == 0)
+        if (StairsParentObject.childCount == 0 && StairLastObject == PlayerLastObject)
         {
             transform.position = StairsParentObject.position;
             transform.parent = StairsParentObject;
